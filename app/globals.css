@@ -1,8 +1,28 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --dashboard-bg: #f5f7fb;
+  --dashboard-surface: #ffffff;
+  --dashboard-surface-muted: #f8fafc;
+  --dashboard-border: #e2e8f0;
+  --dashboard-text: #020617;
+  --dashboard-muted: #64748b;
+  --dashboard-accent: #0f4c5c;
+  --dashboard-accent-hover: #0b3844;
+}
+
+:root[data-dashboard-theme="dark"] {
+  --dashboard-bg: #111827;
+  --dashboard-surface: #1f2937;
+  --dashboard-surface-muted: #374151;
+  --dashboard-border: #374151;
+  --dashboard-text: #f8fafc;
+  --dashboard-muted: #cbd5e1;
+  --dashboard-accent: #22d3ee;
+  --dashboard-accent-hover: #67e8f9;
 }
 
 @theme inline {
@@ -23,4 +43,31 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+[data-dashboard-theme] body,
+[data-dashboard-theme] * {
+  scrollbar-width: none;
+}
+
+[data-dashboard-theme] ::-webkit-scrollbar {
+  display: none;
+}
+
+.leaflet-container {
+  z-index: 0;
+}
+
+.leaflet-control-container {
+  position: relative;
+  z-index: 10;
+}
+
+.leaflet-pane {
+  z-index: 1;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10;
 }
