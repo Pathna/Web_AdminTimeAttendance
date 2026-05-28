@@ -8,6 +8,8 @@ import {
 } from "./attendance-data";
 import AttendanceSection from "./attendance-section";
 
+const ATTENDANCE_REFRESH_INTERVAL_MS = 5000;
+
 const departmentStats = [
   { name: "บัญชี", checkedIn: 18, total: 20 },
   { name: "คลังสินค้า", checkedIn: 31, total: 42 },
@@ -83,12 +85,17 @@ export default function DashboardContent() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadAttendance() {
+    async function loadAttendance(showLoading = false) {
+      if (showLoading) {
+        setIsLoading(true);
+      }
+
       try {
         const attendanceRecords = await loadAttendanceRecords();
 
         if (isMounted) {
           setRecords(attendanceRecords);
+          setError("");
         }
       } catch (caughtError) {
         if (isMounted) {
@@ -101,10 +108,15 @@ export default function DashboardContent() {
       }
     }
 
-    loadAttendance();
+    loadAttendance(true);
+    const intervalId = window.setInterval(
+      () => loadAttendance(),
+      ATTENDANCE_REFRESH_INTERVAL_MS,
+    );
 
     return () => {
       isMounted = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 
