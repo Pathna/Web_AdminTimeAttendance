@@ -19,12 +19,15 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:44348";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function buildUrl(path: string) {
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
+  }
+
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
   }
 
   const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
