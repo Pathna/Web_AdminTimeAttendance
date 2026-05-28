@@ -55,6 +55,12 @@ function getStatusClass(status: string) {
   return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
+function getSortTime(record: AttendanceRecord) {
+  const timeValue = record.check_out_time ?? record.check_in_time;
+
+  return new Date(timeValue.replace(" ", "T")).getTime();
+}
+
 type AttendanceTableProps = {
   records: AttendanceRecord[];
   error: string;
@@ -72,11 +78,7 @@ export default function AttendanceTable({
 }: AttendanceTableProps) {
   const displayRecords = useMemo(() => {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
-    const sortedRecords = [...records].sort(
-      (a, b) =>
-        new Date(b.check_in_time.replace(" ", "T")).getTime() -
-        new Date(a.check_in_time.replace(" ", "T")).getTime(),
-    );
+    const sortedRecords = [...records].sort((a, b) => getSortTime(b) - getSortTime(a));
     const filteredRecords = normalizedSearchTerm
       ? sortedRecords.filter((record) =>
           record.employee_name.toLowerCase().includes(normalizedSearchTerm),
@@ -108,12 +110,13 @@ export default function AttendanceTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[680px] text-left text-sm">
+      <table className="w-full min-w-[820px] text-left text-sm">
         <thead className="bg-[var(--dashboard-surface-muted)] text-[var(--dashboard-muted)]">
           <tr>
             <th className="px-5 py-3 font-medium">ชื่อพนักงาน</th>
             <th className="px-5 py-3 font-medium">แผนก</th>
-            <th className="px-5 py-3 font-medium">เวลา</th>
+            <th className="px-5 py-3 font-medium">เช็คอิน</th>
+            <th className="px-5 py-3 font-medium">เช็คเอาต์</th>
             <th className="px-5 py-3 font-medium">สถานะ</th>
           </tr>
         </thead>
@@ -122,7 +125,7 @@ export default function AttendanceTable({
             const status = getDisplayStatus(record);
 
             return (
-              <tr key={`${record.attendance_id}-${record.status_approve_in_out}`}>
+              <tr key={record.attendance_id}>
                 <td className="px-5 py-4 font-medium text-[var(--dashboard-text)]">
                   {record.employee_name}
                 </td>
@@ -131,6 +134,9 @@ export default function AttendanceTable({
                 </td>
                 <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                   {formatDateTime(record.check_in_time)}
+                </td>
+                <td className="px-5 py-4 text-[var(--dashboard-muted)]">
+                  {formatDateTime(record.check_out_time)}
                 </td>
                 <td className="px-5 py-4">
                   <span

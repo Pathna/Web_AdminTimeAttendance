@@ -10,14 +10,6 @@ import AttendanceSection from "./attendance-section";
 
 const ATTENDANCE_REFRESH_INTERVAL_MS = 5000;
 
-const departmentStats = [
-  { name: "บัญชี", checkedIn: 18, total: 20 },
-  { name: "คลังสินค้า", checkedIn: 31, total: 42 },
-  { name: "บุคคล", checkedIn: 9, total: 10 },
-  { name: "ไอที", checkedIn: 12, total: 15 },
-  { name: "ขาย", checkedIn: 26, total: 41 },
-];
-
 function countUniqueEmployees(records: AttendanceRecord[]) {
   return new Set(records.map((record) => record.employee_id)).size;
 }
@@ -181,40 +173,12 @@ export default function DashboardContent() {
         ))}
       </section>
 
-      <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]">
+      <section className="mt-6">
         <AttendanceSection
           error={error}
           isLoading={isLoading}
           records={records}
         />
-
-        <div className="rounded-lg border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] p-5 shadow-sm">
-          <h2 className="text-base font-semibold">สถานะแยกตามแผนก</h2>
-          <div className="mt-5 space-y-5">
-            {departmentStats.map((item) => {
-              const percent = Math.round((item.checkedIn / item.total) * 100);
-
-              return (
-                <div key={item.name}>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-[var(--dashboard-text)]">
-                      {item.name}
-                    </span>
-                    <span className="text-[var(--dashboard-muted)]">
-                      {item.checkedIn}/{item.total}
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--dashboard-surface-muted)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--dashboard-accent)]"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </section>
     </>
   );

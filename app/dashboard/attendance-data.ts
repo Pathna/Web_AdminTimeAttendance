@@ -54,6 +54,45 @@ function getAttendanceRecords(data: unknown): AttendanceRecord[] {
   return [];
 }
 
+function isOutRecord(record: AttendanceRecord) {
+  return record.status_approve_in_out.toLowerCase() === "out";
+}
+
+function getRecordKey(record: AttendanceRecord) {
+  return String(record.attendance_id);
+}
+
+function getMergedRecord(
+  currentRecord: AttendanceRecord,
+  nextRecord: AttendanceRecord,
+): AttendanceRecord {
+  return {
+    ...currentRecord,
+    check_out_time: currentRecord.check_out_time ?? nextRecord.check_out_time,
+    worked_hours: currentRecord.worked_hours ?? nextRecord.worked_hours,
+    check_out_distance:
+      currentRecord.check_out_distance ?? nextRecord.check_out_distance,
+    status_approve_in_out:
+      isOutRecord(currentRecord) || isOutRecord(nextRecord) ? "Out" : "In",
+  };
+}
+
+function mergeDuplicateAttendanceRecords(records: AttendanceRecord[]) {
+  const recordMap = new Map<string, AttendanceRecord>();
+
+  for (const record of records) {
+    const recordKey = getRecordKey(record);
+    const currentRecord = recordMap.get(recordKey);
+
+    recordMap.set(
+      recordKey,
+      currentRecord ? getMergedRecord(currentRecord, record) : record,
+    );
+  }
+
+  return Array.from(recordMap.values());
+}
+
 export async function loadAttendanceRecords() {
   const workLocationIds = getStoredWorkLocationIds();
   const attendanceRecords: AttendanceRecord[] = [];
@@ -63,10 +102,12 @@ export async function loadAttendanceRecords() {
       work_loca_id: workLocationId,
     });
 
+    console.log(`Loaded attendance for work location ${workLocationId}:`, data);
+
     attendanceRecords.push(...getAttendanceRecords(data));
   }
 
-  return attendanceRecords;
+  return mergeDuplicateAttendanceRecords(attendanceRecords);
 }
 
 export function getAttendanceErrorMessage(caughtError: unknown) {
