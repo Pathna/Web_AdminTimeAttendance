@@ -19,15 +19,11 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://parkingservices-api.cityparking.app";
 
 function buildUrl(path: string) {
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
-  }
-
-  if (!API_BASE_URL) {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
   }
 
   const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
