@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Check-In",
+  title: "Admin Check In",
   description: "Time attendance admin sign in",
+  icons: {
+    icon: "/icons/app-icon.svg",
+  },
 };
 
 export default function RootLayout({

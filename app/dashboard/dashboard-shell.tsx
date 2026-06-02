@@ -101,9 +101,9 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
                 </h1>
               </div>
               <div className="flex items-center gap-3">
-                <button className="h-10 rounded-lg border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] px-4 text-sm font-medium text-[var(--dashboard-text)] hover:bg-[var(--dashboard-surface-muted)]">
+                {/* <button className="h-10 rounded-lg border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] px-4 text-sm font-medium text-[var(--dashboard-text)] hover:bg-[var(--dashboard-surface-muted)]">
                   ส่งออกรายงาน
-                </button>
+                </button> */}
               </div>
             </div>
           </header>
