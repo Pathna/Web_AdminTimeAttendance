@@ -1,6 +1,7 @@
 import type { AttendanceRequest, AttendanceResponse } from "@/lib/attendance";
 import type { AllEmployeeResponse, EmployeeRequest, EmployeeResponse } from "@/lib/employee";
 import type { WorkLocationResponse } from "@/lib/location";
+import { LeaveResponse } from "./leave";
 
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
@@ -126,6 +127,10 @@ export function getlocation(options?: ApiOptions) {
 
 export function getEmployee(options?: ApiOptions) {
   return api.get<AllEmployeeResponse>("/emp/getemployees", options);
+}
+
+export function getLeave(options?: ApiOptions) {
+  return api.get<LeaveResponse>("/api/attendance/Leave", options);
 }
 
 export type {
