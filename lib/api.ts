@@ -23,6 +23,8 @@ export class ApiError extends Error {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+console.log("API_BASE_URL:", API_BASE_URL);
+
 function buildUrl(path: string) {
   if (!API_BASE_URL?.trim()) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
