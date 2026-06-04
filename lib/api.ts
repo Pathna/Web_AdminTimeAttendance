@@ -2,6 +2,7 @@ import type { AttendanceRequest, AttendanceResponse } from "@/lib/attendance";
 import type { AllEmployeeResponse, EmployeeRequest, EmployeeResponse } from "@/lib/employee";
 import type { WorkLocationResponse } from "@/lib/location";
 import { LeaveResponse } from "./leave";
+import { TimeCorrectionResponse } from "./timecorrection";
 
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
@@ -20,14 +21,14 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://parkingservices-api.cityparking.app";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function buildUrl(path: string) {
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
+  if (!API_BASE_URL?.trim()) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
   }
 
-  const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
+  const cleanBaseUrl = API_BASE_URL.trim().replace(/\/$/, "");
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
   return `${cleanBaseUrl}${cleanPath}`;
@@ -130,7 +131,11 @@ export function getEmployee(options?: ApiOptions) {
 }
 
 export function getLeave(options?: ApiOptions) {
-  return api.get<LeaveResponse>("/api/attendance/Leave", options);
+  return api.get<LeaveResponse>("/Get_LeaveRecords", options);
+}
+
+export function getTimeCorrection(options?: ApiOptions) {
+  return api.get<TimeCorrectionResponse>("/time_correction/Get_time_correction_meneger", options);
 }
 
 export type {

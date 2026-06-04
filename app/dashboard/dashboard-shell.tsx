@@ -9,6 +9,7 @@ const navItems = [
   { label: "ภาพรวม", href: "/dashboard" },
   { label: "พนักงาน", href: "/dashboard/employees" },
   { label: "วันลา", href: "/dashboard/leaverecords" },
+  { label: "แก้ไขเวลา", href: "/dashboard/timecorrection" },
   { label: "เวลาเข้าออก", href: "/dashboard/attendancerecords" },
   { label: "แผนที่การเข้างาน", href: "/dashboard/map" },
   { label: "ตั้งค่า", href: "/dashboard/settings" },
@@ -25,6 +26,10 @@ function getPageTitle(pathname: string) {
 
   if (pathname === "/dashboard/leaverecords") {
     return "วันลา";
+  }
+
+  if (pathname === "/dashboard/timecorrection") {
+    return "แก้ไขเวลา";
   }
 
   if (pathname === "/dashboard/map") {

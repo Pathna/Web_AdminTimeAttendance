@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, getLeave } from "@/lib/api";
 import type { Leave, LeaveResponse } from "@/lib/leave";
+import { getVisiblePageNumbers } from "@/lib/pagination";
 
 const PAGE_SIZE = 5;
 const MODAL_PAGE_SIZE = 5;
+type LeaveTypeFilter = "L001" | "L002" | "L003";
+
 const LEAVE_TYPE_LABELS: Record<string, string> = {
   L001: "ลาพักร้อน",
   LOO1: "ลาพักร้อน",
@@ -20,7 +23,12 @@ const LEAVE_TYPE_CODES_BY_NAME: Record<string, string> = {
   ลากิจ: "L003",
   ลากิจล่วงหน้า: "L003",
 };
-const LEAVE_TYPE_CARDS = [
+const LEAVE_TYPE_CARDS: Array<{
+  code: LeaveTypeFilter;
+  label: string;
+  description: string;
+  className: string;
+}> = [
   {
     code: "L001",
     label: "ลาพักร้อน",
@@ -164,15 +172,43 @@ function getStatusClass(status: string) {
   return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
+function getLeaveTypeRowClass() {
+  return "cursor-pointer transition hover:bg-[var(--dashboard-surface-muted)]";
+}
+
+function getLeaveTypeBadgeClass(leaveTypeCode: string) {
+  const normalizedCode = normalizeLeaveTypeCode(leaveTypeCode);
+
+  if (normalizedCode === "L001") {
+    return "bg-sky-100 text-sky-700 ring-sky-200";
+  }
+
+  if (normalizedCode === "L002") {
+    return "bg-emerald-100 text-emerald-700 ring-emerald-200";
+  }
+
+  if (normalizedCode === "L003") {
+    return "bg-amber-100 text-amber-700 ring-amber-200";
+  }
+
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
 function getSortTime(leave: Leave) {
   const date = new Date(leave.start_date.replace(" ", "T"));
 
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
+function isActionKey(key: string) {
+  return key === "Enter" || key === " ";
+}
+
 export default function LeavesContent() {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeLeaveTypeFilter, setActiveLeaveTypeFilter] =
+    useState<LeaveTypeFilter | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [modalPage, setModalPage] = useState(1);
   const [isAllRecordsOpen, setIsAllRecordsOpen] = useState(false);
@@ -232,23 +268,7 @@ export default function LeavesContent() {
     () => [...leaves].sort((a, b) => getSortTime(b) - getSortTime(a)),
     [leaves],
   );
-  const leaveTypeCounts = useMemo(
-    () =>
-      sortedLeaves.reduce<Record<string, number>>((counts, leave) => {
-        if (!isLeaveActiveToday(leave)) {
-          return counts;
-        }
-
-        const leaveTypeCode = normalizeLeaveTypeCode(leave.leve_type_name);
-
-        counts[leaveTypeCode] = (counts[leaveTypeCode] ?? 0) + 1;
-
-        return counts;
-      }, {}),
-    [sortedLeaves],
-  );
-
-  const filteredModalLeaves = useMemo(() => {
+  const searchFilteredLeaves = useMemo(() => {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     if (!normalizedSearchTerm) {
@@ -269,6 +289,32 @@ export default function LeavesContent() {
       ].some((value) => value.toLowerCase().includes(normalizedSearchTerm)),
     );
   }, [searchTerm, sortedLeaves]);
+  const leaveTypeCounts = useMemo(
+    () =>
+      searchFilteredLeaves.reduce<Record<string, number>>((counts, leave) => {
+        if (!isLeaveActiveToday(leave)) {
+          return counts;
+        }
+
+        const leaveTypeCode = normalizeLeaveTypeCode(leave.leve_type_name);
+
+        counts[leaveTypeCode] = (counts[leaveTypeCode] ?? 0) + 1;
+
+        return counts;
+      }, {}),
+    [searchFilteredLeaves],
+  );
+  const filteredModalLeaves = useMemo(
+    () =>
+      activeLeaveTypeFilter
+        ? searchFilteredLeaves.filter(
+            (leave) =>
+              isLeaveActiveToday(leave) &&
+              normalizeLeaveTypeCode(leave.leve_type_name) === activeLeaveTypeFilter,
+          )
+        : searchFilteredLeaves,
+    [activeLeaveTypeFilter, searchFilteredLeaves],
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredModalLeaves.length / PAGE_SIZE));
   const activePage = Math.min(currentPage, totalPages);
@@ -285,11 +331,8 @@ export default function LeavesContent() {
     (activeModalPage - 1) * MODAL_PAGE_SIZE,
     activeModalPage * MODAL_PAGE_SIZE,
   );
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
-  const modalPageNumbers = Array.from(
-    { length: modalTotalPages },
-    (_, index) => index + 1,
-  );
+  const pageNumbers = getVisiblePageNumbers(activePage, totalPages);
+  const modalPageNumbers = getVisiblePageNumbers(activeModalPage, modalTotalPages);
 
   return (
     <section className="rounded-lg border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] shadow-sm">
@@ -333,9 +376,22 @@ export default function LeavesContent() {
 
       <div className="grid gap-4 border-b border-[var(--dashboard-border)] px-5 py-4 md:grid-cols-3">
         {LEAVE_TYPE_CARDS.map((leaveType) => (
-          <div
+          <button
             key={leaveType.code}
-            className={`rounded-lg border px-5 py-4 shadow-sm ${leaveType.className}`}
+            type="button"
+            aria-pressed={activeLeaveTypeFilter === leaveType.code}
+            onClick={() => {
+              setActiveLeaveTypeFilter((currentType) =>
+                currentType === leaveType.code ? null : leaveType.code,
+              );
+              setCurrentPage(1);
+              setModalPage(1);
+            }}
+            className={`rounded-lg border px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-500/20 ${
+              activeLeaveTypeFilter === leaveType.code
+                ? "ring-2 ring-[var(--dashboard-accent)]"
+                : ""
+            } ${leaveType.className}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -349,7 +405,7 @@ export default function LeavesContent() {
               </p>
             </div>
             <p className="mt-3 text-sm">{leaveType.description}</p>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -384,7 +440,18 @@ export default function LeavesContent() {
               </thead>
               <tbody className="divide-y divide-[var(--dashboard-border)]">
                 {displayLeaves.map((leave) => (
-                  <tr key={leave.id}>
+                  <tr
+                    key={leave.id}
+                    tabIndex={0}
+                    className={getLeaveTypeRowClass()}
+                    onClick={() => setSelectedLeaveDetail(leave)}
+                    onKeyDown={(event) => {
+                      if (isActionKey(event.key)) {
+                        event.preventDefault();
+                        setSelectedLeaveDetail(leave);
+                      }
+                    }}
+                  >
                     <td className="px-5 py-4 font-medium text-[var(--dashboard-text)]">
                       {leave.name}
                     </td>
@@ -394,8 +461,14 @@ export default function LeavesContent() {
                     <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                       {leave.department_name || "-"}
                     </td>
-                    <td className="px-5 py-4 text-[var(--dashboard-muted)]">
-                      {formatLeaveType(leave.leve_type_name)}
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getLeaveTypeBadgeClass(
+                          leave.leve_type_name,
+                        )}`}
+                      >
+                        {formatLeaveType(leave.leve_type_name)}
+                      </span>
                     </td>
                     <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                       {formatDate(leave.start_date)}
@@ -406,8 +479,11 @@ export default function LeavesContent() {
                     <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                       <button
                         type="button"
-                        onClick={() => setSelectedLeaveDetail(leave)}
-                        className="h-9 rounded-lg border border-[var(--dashboard-border)] px-3 text-xs font-medium text-[var(--dashboard-text)] hover:bg-[var(--dashboard-surface-muted)]"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedLeaveDetail(leave);
+                        }}
+                        className="h-9 rounded-lg border border-[var(--dashboard-accent)] px-3 text-xs font-semibold text-[var(--dashboard-accent)] transition hover:bg-[var(--dashboard-accent)] hover:text-white focus:outline-none focus:ring-4 focus:ring-cyan-500/20"
                       >
                         ดูรายละเอียด
                       </button>
@@ -509,7 +585,18 @@ export default function LeavesContent() {
                   </thead>
                   <tbody className="divide-y divide-[var(--dashboard-border)]">
                     {modalDisplayLeaves.map((leave) => (
-                      <tr key={leave.id}>
+                      <tr
+                        key={leave.id}
+                        tabIndex={0}
+                        className={getLeaveTypeRowClass()}
+                        onClick={() => setSelectedLeaveDetail(leave)}
+                        onKeyDown={(event) => {
+                          if (isActionKey(event.key)) {
+                            event.preventDefault();
+                            setSelectedLeaveDetail(leave);
+                          }
+                        }}
+                      >
                         <td className="px-5 py-4 font-medium text-[var(--dashboard-text)]">
                           {leave.name}
                         </td>
@@ -519,8 +606,14 @@ export default function LeavesContent() {
                         <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                           {leave.department_name || "-"}
                         </td>
-                        <td className="px-5 py-4 text-[var(--dashboard-muted)]">
-                          {formatLeaveType(leave.leve_type_name)}
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getLeaveTypeBadgeClass(
+                              leave.leve_type_name,
+                            )}`}
+                          >
+                            {formatLeaveType(leave.leve_type_name)}
+                          </span>
                         </td>
                         <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                           {formatDate(leave.start_date)}
@@ -543,8 +636,11 @@ export default function LeavesContent() {
                         <td className="px-5 py-4 text-[var(--dashboard-muted)]">
                           <button
                             type="button"
-                            onClick={() => setSelectedLeaveDetail(leave)}
-                            className="h-9 rounded-lg border border-[var(--dashboard-border)] px-3 text-xs font-medium text-[var(--dashboard-text)] hover:bg-[var(--dashboard-surface-muted)]"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedLeaveDetail(leave);
+                            }}
+                            className="h-9 rounded-lg border border-[var(--dashboard-accent)] px-3 text-xs font-semibold text-[var(--dashboard-accent)] transition hover:bg-[var(--dashboard-accent)] hover:text-white focus:outline-none focus:ring-4 focus:ring-cyan-500/20"
                           >
                             ดูรายละเอียด
                           </button>
